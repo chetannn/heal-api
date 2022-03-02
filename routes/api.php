@@ -32,9 +32,21 @@ Route::get('/doctors/appointment-request', [App\Http\Controllers\DoctorControlle
 
 Route::post('/doctor', App\Http\Controllers\Doctor\StoreController::class)->middleware('auth:sanctum');
 
+Route::post('/checkup-notes/{appointment}', [App\Http\Controllers\CheckupNoteController::class, 'store'])
+    ->middleware('auth:sanctum')
+    ->name('checkup_notes.store');
+
+ Route::post('/checkup-notes/{checkupNote}/files', [\App\Http\Controllers\CheckupNoteController::class, 'storeFiles'])
+     ->middleware('auth:sanctum')
+     ->name('checkup_notes.store_files');
+
 // patients routes
 Route::post('/patients/login', [App\Http\Controllers\PatientController::class, 'login'])->name('patients.login');
 Route::post('/patients', [App\Http\Controllers\PatientController::class, 'store'])->name('patients.store');
+
+Route::post('/patients/{appointment}/accept-rescheduled-appointment', [App\Http\Controllers\PatientController::class, 'acceptRescheduledAppointment'])
+    ->middleware('auth:sanctum')
+    ->name('appointments.accept_rescheduled_appointment');
 
 Route::post('/patients/appointment-request', [App\Http\Controllers\PatientController::class, 'storeAppointmentRequest'])
     ->middleware('auth:sanctum')

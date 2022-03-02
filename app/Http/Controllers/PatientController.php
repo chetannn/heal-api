@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -58,9 +59,21 @@ class PatientController extends Controller
         return response($appointmentRequest);
     }
 
-    public function getAppointmentRequests() : Response
+    public function getAppointmentRequests(): Response
     {
         return response(auth()->user()->appointmentRequests()->get());
+    }
+
+
+    public function acceptRescheduledAppointment(Appointment $appointment): Response
+    {
+        abort_if($appointment->patient_id !== auth()->id(), 403);
+
+        $appointment->update([
+            'appointment_rescheduled_accepted_at' => now()
+        ]);
+
+        return response($appointment->fresh());
     }
 
 }

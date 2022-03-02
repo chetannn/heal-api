@@ -13,13 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('appointments', function (Blueprint $table) {
+        Schema::create('checkup_notes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
-            $table->timestamp('appointment_rescheduled_at')->nullable();
-            $table->timestamp('appointment_rescheduled_accepted_at')->nullable();
-            $table->text('comments')->nullable();
+            $table->foreignId('appointment_id')->constrained()->cascadeOnDelete();
+            $table->text('notes')->nullable();
+            $table->text('prescription');
             $table->timestamps();
         });
     }
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('appointments');
+        Schema::dropIfExists('checkup_notes');
     }
 };

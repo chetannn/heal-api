@@ -2,11 +2,15 @@
 
 namespace Tests\Feature\Doctor;
 
+use App\Models\Appointment;
 use App\Models\AppointmentRequest;
+use App\Models\CheckupNote;
 use App\Models\Doctor;
 use App\Models\Patient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DoctorControllerTest extends TestCase
@@ -82,6 +86,83 @@ class DoctorControllerTest extends TestCase
                 "id" => $appointmentRequest->id,
                 "accepted_at" => $appointmentRequest->accepted_at
             ]);
+
+    }
+
+    public function test_a_doctor_can_add_a_checkup_note_for_an_appointment_that_is_completed()
+    {
+        $doctor = Doctor::factory()->create();
+        $patient = Patient::factory()->create();
+
+        $appointmentRequest = AppointmentRequest::factory()
+            ->for($patient)
+            ->for($doctor)
+            ->create();
+
+        $appointmentRequest->update([
+            'accepted_at' => now()
+        ]);
+
+        $appointment = Appointment::factory()
+            ->for($doctor)
+            ->for($patient)
+            ->create();
+
+        $this->actingAs($doctor)->postJson(route('checkup_notes.store', [
+            'appointment' => $appointment
+        ]), [
+            'notes' => $this->faker->paragraph(1),
+            'prescription' => $this->faker->paragraph(1),
+//            'patient_id'
+        ])
+            ->assertOk();
+
+    }
+
+    public function test_a_doctor_can_add_files_for_a_checkup_note_during_or_after_the_appointment_with_the_patient()
+    {
+        Storage::fake('local');
+
+        $doctor = Doctor::factory()->create();
+        $patient = Patient::factory()->create();
+
+        $appointmentRequest = AppointmentRequest::factory()
+            ->for($patient)
+            ->for($doctor)
+            ->create();
+
+        $appointmentRequest->update([
+            'accepted_at' => now()
+        ]);
+
+        $appointment = Appointment::factory()
+            ->for($doctor)
+            ->for($patient)
+            ->create();
+
+        $checkupNote = CheckupNote::factory()
+            ->for($appointment)
+            ->create();
+
+        $files = [
+            UploadedFile::fake()->create('an_important_doc_file.doc'),
+            UploadedFile::fake()->create('an_important_pdf_file.pdf'),
+            UploadedFile::fake()->create('an_important_png_file.jpg'),
+            UploadedFile::fake()->create('an_important_jpg_file.png'),
+        ];
+
+        $response = $this->actingAs($doctor)
+            ->postJson(route('checkup_notes.store_files', [
+                'checkupNote' => $checkupNote
+            ]), [
+                'files' => $files
+            ]);
+
+        $response->assertOk();
+
+        foreach ($files as $file) {
+            Storage::disk('local')->assertExists("checkup_notes/" . $file->hashName());
+        }
 
     }
 }
